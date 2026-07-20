@@ -900,3 +900,59 @@ CREATE INDEX ix_stg_itens_pedido_item
 GO
 
 
+/* =========================================================
+   Criação do schema Violação
+   ========================================================= */
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.schemas WHERE name = 'violacao'
+)
+BEGIN
+    EXEC('CREATE SCHEMA violacao');
+END;
+GO
+
+/* =========================================================
+   VIOLACAO.FT_VENDA_VIOLACAO
+   ========================================================= */
+
+CREATE TABLE violacao.ft_venda_violacao
+(
+    id_violacao       BIGINT IDENTITY(1,1) NOT NULL,
+    pedido_id         BIGINT        NOT NULL,
+    item_pedido_id    BIGINT        NULL,
+    motivo            VARCHAR(500)  NOT NULL,
+    campo             VARCHAR(100)  NULL,
+    valor_encontrado  VARCHAR(500)  NULL,
+    data_violacao     DATETIME      NOT NULL
+        CONSTRAINT df_ft_venda_violacao_data DEFAULT SYSDATETIME(),
+
+    CONSTRAINT pk_ft_venda_violacao
+        PRIMARY KEY (id_violacao),
+
+    CONSTRAINT fk_violacao_pedido
+        FOREIGN KEY (pedido_id)
+        REFERENCES stg.stg_pedidos (pedido_id),
+
+    CONSTRAINT fk_violacao_item_pedido
+        FOREIGN KEY (item_pedido_id)
+        REFERENCES stg.stg_itens_pedido (item_pedido_id)
+);
+GO
+
+/* =========================================================
+   ÍNDICES
+   ========================================================= */
+
+CREATE INDEX ix_violacao_pedido
+    ON violacao.ft_venda_violacao (pedido_id);
+GO
+
+CREATE INDEX ix_violacao_item_pedido
+    ON violacao.ft_venda_violacao (item_pedido_id);
+GO
+
+CREATE INDEX ix_violacao_data
+    ON violacao.ft_venda_violacao (data_violacao);
+GO
+
