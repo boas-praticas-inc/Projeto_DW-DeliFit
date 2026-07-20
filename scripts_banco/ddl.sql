@@ -436,7 +436,14 @@ GO
 /* =========================================================
    Criação Schema Staging
    ========================================================= */
-CREATE SCHEMA stg;
+IF NOT EXISTS (
+    SELECT *
+    FROM sys.schemas
+    WHERE name = 'stg'
+)
+BEGIN
+    EXEC('CREATE SCHEMA stg');
+END;
 GO
 
 
@@ -483,7 +490,7 @@ GO
 CREATE TABLE dw.dim_cliente
 (
     id_cliente          INT IDENTITY(1,1) PRIMARY KEY,
-    cliente_id          INT NOT NULL,
+    cliente_id          BIGINT NOT NULL,
     faixa_etaria        VARCHAR(30),
     idade               INT,
     data_cadastro       DATE,
@@ -500,8 +507,9 @@ GO
 CREATE TABLE dw.dim_endereco
 (
     id_endereco         INT IDENTITY(1,1) PRIMARY KEY,
+    endereco_id         BIGINT NOT NULL,
     cep                 VARCHAR(10),
-    rua                 VARCHAR(150),
+    logradouro          VARCHAR(150),
     bairro              VARCHAR(100),
     numero              VARCHAR(20),
     cidade              VARCHAR(100),
@@ -520,7 +528,7 @@ GO
 CREATE TABLE dw.dim_restaurante
 (
     id_restaurante      INT IDENTITY(1,1) PRIMARY KEY,
-    restaurante_id      INT NOT NULL,
+    restaurante_id      BIGINT NOT NULL,
     nome_fantasia       VARCHAR(150) NOT NULL,
     cidade              VARCHAR(100),
     estado              CHAR(2),
@@ -536,13 +544,13 @@ GO
 CREATE TABLE dw.dim_item
 (
     id_item                 INT IDENTITY(1,1) PRIMARY KEY,
-    item_cardapio_id        INT NOT NULL,
+    item_cardapio_id        BIGINT NOT NULL,
     nome                    VARCHAR(150) NOT NULL,
     categoria               VARCHAR(100),
     calorias                DECIMAL(10,2),
     proteinas               DECIMAL(10,2),
-    carboidrato             DECIMAL(10,2),
-    gordura                 DECIMAL(10,2),
+    carboidratos             DECIMAL(10,2),
+    gorduras                 DECIMAL(10,2),
     restricao_alimentar     VARCHAR(100),
     faixa_preco             VARCHAR(50),
     disponivel              BIT NOT NULL,
@@ -593,7 +601,8 @@ CREATE TABLE dw.ft_venda
     id_pagamento            INT NOT NULL,
     id_status               INT NOT NULL,
 
-    pedido_id               INT NOT NULL,
+    pedido_id               BIGINT NOT NULL,
+    item_pedido_id          BIGINT NOT NULL,
 
     quantidade              INT NOT NULL,
     valor_unitario          DECIMAL(10,2) NOT NULL,
