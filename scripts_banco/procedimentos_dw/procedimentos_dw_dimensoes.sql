@@ -328,8 +328,3 @@ BEGIN
     END CATCH
 END;
 GO
-
-
-
-
-EXEC dw.sp_carregar_dimensoes;

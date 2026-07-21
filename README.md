@@ -159,6 +159,56 @@ O fluxo ETL é composto pelas seguintes etapas:
 5. Carga da tabela fato;
 6. Atualização dos agregados.
 
+## Como rodar o projeto
+
+O projeto utiliza SQL Server. Os scripts devem ser executados no SQL Server
+Management Studio ou pelo `sqlcmd`, respeitando a ordem abaixo.
+
+### 1. Criar a estrutura do banco
+
+Execute os arquivos da pasta `scripts_banco/ddl` nesta ordem:
+
+1. `00_banco_e_schemas.sql`;
+2. `01_oltp_tabelas.sql`;
+3. `02_dw_tabelas.sql`;
+4. `03_staging_tabelas.sql`;
+5. `04_violacoes.sql`;
+6. `05_agregados.sql`.
+
+### 2. Criar e povoar o ambiente operacional
+
+Execute:
+
+1. `scripts_banco/povoamento_operacional.sql`;
+2. `scripts_banco/povoamento_dimensao_tempo.sql`.
+
+### 3. Criar as procedures
+
+Execute os arquivos abaixo para criar as procedures, sem executar cargas
+automaticamente:
+
+1. `scripts_banco/procedimentos_oltp/procedimentos_oltp.sql`;
+2. `scripts_banco/procedimentos_violacao/procedimentos_violacao.sql`;
+3. `scripts_banco/procedimentos_dw/procedimentos_dw_dimensoes.sql`;
+4. `scripts_banco/procedimentos_dw/procedimento_dw_fato.sql`;
+5. `scripts_banco/procedimentos_dw/procedimentos_agregado.sql`.
+
+### 4. Executar o ETL
+
+Execute o arquivo `scripts_banco/execucao/01_executar_etl.sql`. Ele realiza,
+na ordem, a extração Full Load para a staging, a validação, a carga das
+dimensões, a carga da fato e a atualização dos agregados.
+
+### 5. Conferir os indicadores
+
+Depois do ETL, execute:
+
+`verificacao/consultas_verificacao_indicadores.sql`
+
+Os arquivos de definição apenas criam tabelas e procedures. As execuções
+foram separadas em scripts próprios para evitar cargas acidentais ao abrir ou
+reexecutar um arquivo de definição.
+
 ---
 
 # Dashboard

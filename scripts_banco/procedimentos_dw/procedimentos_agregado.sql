@@ -272,16 +272,3 @@ BEGIN
     EXEC dw.sp_carga_agg_vendas_cliente;
 END;
 GO
-
-
-
-
- EXEC dw.sp_carga_agregados;
-
-
-
-SELECT * FROM dw.agg_vendas_diarias ORDER BY data_venda;
-SELECT * FROM dw.agg_vendas_mensais ORDER BY ano, mes;
-SELECT * FROM dw.agg_vendas_restaurante ORDER BY faturamento DESC;
-SELECT * FROM dw.agg_vendas_categoria ORDER BY receita_categoria DESC;
-SELECT * FROM dw.agg_vendas_cliente ORDER BY valor_total_gasto DESC;

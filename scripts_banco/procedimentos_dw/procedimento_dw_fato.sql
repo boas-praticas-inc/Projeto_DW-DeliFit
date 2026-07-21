@@ -117,13 +117,3 @@ BEGIN
     END CATCH;
 END;
 GO
-
-
-/* ETL:
-   
-*/
-EXEC stg.sp_extrair_staging_completo;
-   EXEC dw.sp_validar_staging;
-   EXEC dw.sp_carregar_dimensoes;
-   EXEC dw.sp_carregar_ft_venda;
-   EXEC dw.sp_carga_agregados;

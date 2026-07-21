@@ -251,7 +251,3 @@ BEGIN
     END CATCH
 END;
 GO
-
--- Exemplo de uso
-
-EXEC stg.sp_extrair_staging_completo;
