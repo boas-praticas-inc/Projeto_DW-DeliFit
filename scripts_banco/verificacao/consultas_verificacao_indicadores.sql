@@ -20,8 +20,9 @@ GO
    -- EXEC dw.sp_carga_agregados;
 
    Observacao:
-   - indicadores de entrega e pagamento usam stg.stg_pedidos,
-     pois essas medidas nao foram materializadas na ft_venda.
+   - a ft_venda continua na granularidade de item;
+   - indicadores de pedido usam dw.vw_pedidos_analitico,
+     que consolida uma linha por pedido.
    ============================================================ */
 
 
@@ -157,15 +158,17 @@ GO
    - pedidos por status
    ============================================================ */
 
-SELECT status_pedido,
+SELECT s.status_pedido,
        COUNT(*) AS quantidade_pedidos,
        CAST(
-           100.0 * COUNT(*) / NULLIF((SELECT COUNT(*) FROM stg.stg_pedidos), 0)
+           100.0 * COUNT(*) / NULLIF(SUM(COUNT(*)) OVER (), 0)
            AS DECIMAL(5,2)
        ) AS percentual_pedidos
-FROM stg.stg_pedidos
-GROUP BY status_pedido
-ORDER BY quantidade_pedidos DESC, status_pedido;
+FROM dw.vw_pedidos_analitico AS p
+INNER JOIN dw.dim_status AS s
+    ON s.id_status = p.id_status
+GROUP BY s.status_pedido
+ORDER BY quantidade_pedidos DESC, s.status_pedido;
 GO
 
 
@@ -177,13 +180,15 @@ GO
    ============================================================ */
 
 SELECT COUNT(*) AS total_pedidos,
-       SUM(CASE WHEN status_pedido = 'CANCELADO' THEN 1 ELSE 0 END) AS pedidos_cancelados,
+       SUM(CASE WHEN s.status_pedido = 'CANCELADO' THEN 1 ELSE 0 END) AS pedidos_cancelados,
        CAST(
-           100.0 * SUM(CASE WHEN status_pedido = 'CANCELADO' THEN 1 ELSE 0 END)
+           100.0 * SUM(CASE WHEN s.status_pedido = 'CANCELADO' THEN 1 ELSE 0 END)
            / NULLIF(COUNT(*), 0)
            AS DECIMAL(5,2)
        ) AS taxa_cancelamento_percentual
-FROM stg.stg_pedidos;
+FROM dw.vw_pedidos_analitico AS p
+INNER JOIN dw.dim_status AS s
+    ON s.id_status = p.id_status;
 GO
 
 
@@ -194,13 +199,15 @@ GO
    - tempo medio de entrega
    ============================================================ */
 
-SELECT YEAR(criado_em) AS ano,
-       MONTH(criado_em) AS mes,
+SELECT t.ano,
+       t.mes,
        COUNT(*) AS pedidos_entregues,
-       CAST(AVG(DATEDIFF(MINUTE, criado_em, entregue_em)) AS DECIMAL(10,2)) AS tempo_medio_entrega_minutos
-FROM stg.stg_pedidos
-WHERE entregue_em IS NOT NULL
-GROUP BY YEAR(criado_em), MONTH(criado_em)
+       CAST(AVG(p.tempo_entrega_minutos) AS DECIMAL(10,2)) AS tempo_medio_entrega_minutos
+FROM dw.vw_pedidos_analitico AS p
+INNER JOIN dw.dim_tempo AS t
+    ON t.id_tempo = p.id_tempo_criacao
+WHERE p.tempo_entrega_minutos IS NOT NULL
+GROUP BY t.ano, t.mes
 ORDER BY ano, mes;
 GO
 
@@ -328,15 +335,14 @@ GO
    - pedidos por forma de pagamento
    ============================================================ */
 
-SELECT forma_pagamento,
+SELECT pg.forma_pagamento,
        COUNT(*) AS quantidade_pedidos,
-       CAST(
-           100.0 * COUNT(*) / NULLIF((SELECT COUNT(*) FROM stg.stg_pedidos), 0)
-           AS DECIMAL(5,2)
-       ) AS percentual_pedidos
-FROM stg.stg_pedidos
-GROUP BY forma_pagamento
-ORDER BY quantidade_pedidos DESC, forma_pagamento;
+       CAST(100.0 * COUNT(*) / NULLIF(SUM(COUNT(*)) OVER (), 0) AS DECIMAL(5,2)) AS percentual_pedidos
+FROM dw.vw_pedidos_analitico AS p
+INNER JOIN dw.dim_pagamento AS pg
+    ON pg.id_pagamento = p.id_pagamento
+GROUP BY pg.forma_pagamento
+ORDER BY quantidade_pedidos DESC, pg.forma_pagamento;
 GO
 
 
@@ -348,13 +354,12 @@ GO
    - taxa de falha de pagamento
    ============================================================ */
 
-SELECT status_pagamento,
+SELECT pg.status_pagamento,
        COUNT(*) AS quantidade_pedidos,
-       CAST(
-           100.0 * COUNT(*) / NULLIF((SELECT COUNT(*) FROM stg.stg_pedidos), 0)
-           AS DECIMAL(5,2)
-       ) AS percentual_pedidos
-FROM stg.stg_pedidos
-GROUP BY status_pagamento
-ORDER BY quantidade_pedidos DESC, status_pagamento;
+       CAST(100.0 * COUNT(*) / NULLIF(SUM(COUNT(*)) OVER (), 0) AS DECIMAL(5,2)) AS percentual_pedidos
+FROM dw.vw_pedidos_analitico AS p
+INNER JOIN dw.dim_pagamento AS pg
+    ON pg.id_pagamento = p.id_pagamento
+GROUP BY pg.status_pagamento
+ORDER BY quantidade_pedidos DESC, pg.status_pagamento;
 GO
