@@ -1,41 +1,9 @@
 USE DeliFitDB;
 GO
 
-/* ============================================================
-   CONSULTAS DE VERIFICACAO DOS INDICADORES DO PROJETO DELIFIT
-
-   Base utilizada:
-   - indicadores descritos no estudo_caso;
-   - subconjunto mapeado no projeto e documentado no README;
-   - organizacao inspirada no exemplo-professor.
-
-   Antes de executar estas consultas, garanta que o fluxo do DW
-   e dos agregados tenha sido executado.
-
-   Exemplo de ordem de execucao:
-   -- EXEC stg.sp_extrair_staging_completo;
-   -- DECLARE @lote_execucao INT;
-   -- EXEC dw.sp_validar_staging @lote_execucao = @lote_execucao OUTPUT;
-   -- EXEC dw.sp_carregar_dimensoes;
-   -- EXEC dw.sp_carregar_ft_venda @lote_execucao = @lote_execucao;
-   -- EXEC dw.sp_carga_agregados;
-
-   Observacao:
-   - a ft_venda continua na granularidade de item;
-   - indicadores de pedido usam dw.vw_pedidos_analitico,
-     que consolida uma linha por pedido.
-   ============================================================ */
-
-
-/* ============================================================
+/*
    1. VENDAS DIARIAS
-
-   Indicadores:
-   - faturamento diario
-   - quantidade de pedidos diaria
-   - quantidade de itens vendidos
-   - ticket medio diario
-   ============================================================ */
+*/
 
 SELECT data_venda,
        quantidade_pedidos,
@@ -47,15 +15,9 @@ ORDER BY data_venda;
 GO
 
 
-/* ============================================================
+/*
    2. VENDAS MENSAIS
-
-   Indicadores:
-   - faturamento mensal
-   - quantidade de pedidos mensal
-   - quantidade de itens vendidos
-   - ticket medio mensal
-   ============================================================ */
+*/
 
 SELECT ano,
        mes,
@@ -68,14 +30,9 @@ ORDER BY ano, mes;
 GO
 
 
-/* ============================================================
+/*
    3. FATURAMENTO E TICKET MEDIO ANUAL
-
-   Indicadores:
-   - faturamento anual
-   - quantidade de pedidos anual
-   - ticket medio anual
-   ============================================================ */
+*/
 
 SELECT ano,
        SUM(quantidade_pedidos) AS quantidade_pedidos,
@@ -91,12 +48,9 @@ ORDER BY ano;
 GO
 
 
-/* ============================================================
+/*
    4. TICKET MEDIO GERAL
-
-   Indicador:
-   - ticket medio
-   ============================================================ */
+*/
 
 WITH pedidos AS
 (
@@ -115,13 +69,9 @@ FROM pedidos;
 GO
 
 
-/* ============================================================
+/*
    5. VENDAS POR RESTAURANTE
-
-   Indicadores:
-   - receita por restaurante
-   - restaurantes com maior faturamento
-   ============================================================ */
+*/
 
 SELECT r.restaurante_id,
        r.nome_fantasia,
@@ -138,13 +88,9 @@ ORDER BY a.faturamento DESC, a.quantidade_pedidos DESC;
 GO
 
 
-/* ============================================================
+/*
    6. VENDAS POR CATEGORIA
-
-   Indicadores:
-   - receita por categoria
-   - categorias mais vendidas
-   ============================================================ */
+*/
 
 SELECT categoria,
        quantidade_itens_vendidos,
@@ -155,12 +101,9 @@ ORDER BY receita_categoria DESC, quantidade_itens_vendidos DESC;
 GO
 
 
-/* ============================================================
+/*
    7. PEDIDOS POR STATUS
-
-   Indicador:
-   - pedidos por status
-   ============================================================ */
+*/
 
 SELECT s.status_pedido,
        COUNT(*) AS quantidade_pedidos,
@@ -176,12 +119,9 @@ ORDER BY quantidade_pedidos DESC, s.status_pedido;
 GO
 
 
-/* ============================================================
+/*
    8. TAXA DE CANCELAMENTO
-
-   Indicador:
-   - taxa de cancelamento
-   ============================================================ */
+*/
 
 SELECT COUNT(*) AS total_pedidos,
        SUM(CASE WHEN s.status_pedido = 'CANCELADO' THEN 1 ELSE 0 END) AS pedidos_cancelados,
@@ -196,12 +136,9 @@ INNER JOIN dw.dim_status AS s
 GO
 
 
-/* ============================================================
+/*
    9. TEMPO MEDIO DE ENTREGA
-
-   Indicador:
-   - tempo medio de entrega
-   ============================================================ */
+*/
 
 SELECT t.ano,
        t.mes,
@@ -216,12 +153,9 @@ ORDER BY ano, mes;
 GO
 
 
-/* ============================================================
+/*
    10. CLIENTES CADASTRADOS
-
-   Indicador:
-   - clientes cadastrados
-   ============================================================ */
+*/
 
 SELECT COUNT(*) AS clientes_cadastrados
 FROM dw.dim_cliente
@@ -229,12 +163,9 @@ WHERE registro_ativo = 1;
 GO
 
 
-/* ============================================================
+/*
    11. CLIENTES QUE MAIS COMPRAM
-
-   Indicador:
-   - clientes que mais compram
-   ============================================================ */
+*/
 
 SELECT TOP (10)
        dc.cliente_id,
@@ -257,12 +188,9 @@ ORDER BY quantidade_pedidos DESC, valor_total_gasto DESC;
 GO
 
 
-/* ============================================================
+/*
    12. CLIENTES QUE MAIS GASTAM
-
-   Indicador:
-   - clientes que mais gastam
-   ============================================================ */
+*/
 
 SELECT TOP (10)
        dc.cliente_id,
@@ -289,12 +217,9 @@ ORDER BY valor_total_gasto DESC, quantidade_pedidos DESC;
 GO
 
 
-/* ============================================================
+/*
    13. TICKET MEDIO POR CLIENTE
-
-   Indicador:
-   - ticket medio por cliente
-   ============================================================ */
+*/
 
 SELECT dc.cliente_id,
        u.nome AS nome_cliente,
@@ -320,12 +245,9 @@ ORDER BY ticket_medio_cliente DESC, valor_total_gasto DESC;
 GO
 
 
-/* ============================================================
+/*
    14. ITENS MAIS VENDIDOS
-
-   Indicador:
-   - itens mais vendidos
-   ============================================================ */
+*/
 
 SELECT TOP (10)
        i.item_cardapio_id,
@@ -344,12 +266,9 @@ ORDER BY quantidade_vendida DESC, receita_item DESC;
 GO
 
 
-/* ============================================================
+/*
    15. PEDIDOS POR FORMA DE PAGAMENTO
-
-   Indicador:
-   - pedidos por forma de pagamento
-   ============================================================ */
+*/
 
 SELECT pg.forma_pagamento,
        COUNT(*) AS quantidade_pedidos,
@@ -362,13 +281,9 @@ ORDER BY quantidade_pedidos DESC, pg.forma_pagamento;
 GO
 
 
-/* ============================================================
+/*
    16. TAXAS DE PAGAMENTO
-
-   Indicadores:
-   - taxa de pagamentos concluidos
-   - taxa de falha de pagamento
-   ============================================================ */
+*/
 
 SELECT pg.status_pagamento,
        COUNT(*) AS quantidade_pedidos,
