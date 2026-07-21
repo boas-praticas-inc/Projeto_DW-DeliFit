@@ -132,8 +132,8 @@ END;
 GO
 
 
-/*
+
 EXEC dw.sp_povoar_dim_tempo
     @data_inicio = '2020-01-01',
     @data_fim    = '2030-12-31';
-*/
+

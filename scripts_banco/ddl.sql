@@ -6,6 +6,7 @@
 
 --DDL
 
+
 USE master;
 GO
 

@@ -1374,7 +1374,7 @@ END;
 GO
 
 --Executando limpeza
-EXEC oltp.sp_limpar_ambiente;
+--EXEC oltp.sp_limpar_ambiente;
 GO
 
 SELECT *
