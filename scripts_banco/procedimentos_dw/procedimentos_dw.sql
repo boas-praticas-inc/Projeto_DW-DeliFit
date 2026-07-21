@@ -2,10 +2,9 @@
 USE DeliFitDB;
 GO
 
-/* =========================================================
+/*
    1. SP_CARREGAR_DIM_RESTAURANTE (SCD2)
-   Fonte: stg.stg_restaurantes
-   ========================================================= */
+*/
 
 CREATE OR ALTER PROCEDURE dw.sp_carregar_dim_restaurante
 AS
@@ -50,11 +49,9 @@ BEGIN
 END;
 GO
 
-/* =========================================================
+/*
    2. SP_CARREGAR_DIM_CLIENTE (SCD2)
-   Fonte: stg.stg_clientes + stg.stg_usuarios (join)
-   Calcula idade e faixa_etaria.
-   ========================================================= */
+*/
 
 CREATE OR ALTER PROCEDURE dw.sp_carregar_dim_cliente
 AS
@@ -132,10 +129,9 @@ BEGIN
 END;
 GO
 
-/* =========================================================
+/*
    3. SP_CARREGAR_DIM_ENDERECO (SCD2)
-   Fonte: stg.stg_enderecos
-   ========================================================= */
+*/
 
 CREATE OR ALTER PROCEDURE dw.sp_carregar_dim_endereco
 AS
@@ -181,11 +177,9 @@ BEGIN
 END;
 GO
 
-/* =========================================================
+/*
    4. SP_CARREGAR_DIM_ITEM (SCD2)
-   Fonte: stg.stg_itens_cardapio + stg.stg_categorias_cardapio
-   Calcula faixa_preco.
-   ========================================================= */
+*/
 
 CREATE OR ALTER PROCEDURE dw.sp_carregar_dim_item
 AS
@@ -260,10 +254,9 @@ BEGIN
 END;
 GO
 
-/* =========================================================
-   5. SP_CARREGAR_DIM_PAGAMENTO (Tipo 0 — sem histórico,
-   a chave natural é o próprio conteúdo)
-   ========================================================= */
+/*
+   5. SP_CARREGAR_DIM_PAGAMENTO
+*/
 
 CREATE OR ALTER PROCEDURE dw.sp_carregar_dim_pagamento
 AS
@@ -285,9 +278,9 @@ BEGIN
 END;
 GO
 
-/* =========================================================
+/*
    6. SP_CARREGAR_DIM_STATUS (Tipo 0)
-   ========================================================= */
+  */
 
 CREATE OR ALTER PROCEDURE dw.sp_carregar_dim_status
 AS
@@ -306,10 +299,9 @@ BEGIN
 END;
 GO
 
-/* =========================================================
+/*
    7. SP_CARREGAR_DIMENSOES
-   Orquestrador de todas as dimensões.
-   ========================================================= */
+*/
 
 CREATE OR ALTER PROCEDURE dw.sp_carregar_dimensoes
 AS
@@ -337,10 +329,7 @@ BEGIN
 END;
 GO
 
-/* =========================================================
-   EXEMPLO DE USO
-   ========================================================= */
 
-/*
-EXEC dw.sp_carregar_dimensoes;
-*/
+
+
+--EXEC dw.sp_carregar_dimensoes;
