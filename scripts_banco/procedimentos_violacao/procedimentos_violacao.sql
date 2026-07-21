@@ -125,10 +125,9 @@ GO
 
 
 
---DECLARE @lote INT;
---EXEC dw.sp_validar_staging @lote_execucao = @lote OUTPUT;
-
 -- Consultar as violações do último lote
+/*
 SELECT * FROM violacao.ft_venda_violacao
 WHERE lote_execucao = (SELECT MAX(lote_execucao) FROM violacao.ft_venda_violacao)
 ORDER BY pedido_id, item_pedido_id;
+*/
