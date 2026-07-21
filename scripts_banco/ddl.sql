@@ -901,9 +901,8 @@ GO
 
 
 /* =========================================================
-   Criação do schema Violação
+   Criação schema violação
    ========================================================= */
-
 IF NOT EXISTS (
     SELECT 1 FROM sys.schemas WHERE name = 'violacao'
 )
@@ -913,12 +912,13 @@ END;
 GO
 
 /* =========================================================
-   VIOLACAO.FT_VENDA_VIOLACAO
+   VIOLACAO.FT_VENDA_VIOLACAO  -> uma linha por inconsistência encontrada.
    ========================================================= */
 
 CREATE TABLE violacao.ft_venda_violacao
 (
     id_violacao       BIGINT IDENTITY(1,1) NOT NULL,
+    lote_execucao     INT           NOT NULL,
     pedido_id         BIGINT        NOT NULL,
     item_pedido_id    BIGINT        NULL,
     motivo            VARCHAR(500)  NOT NULL,
@@ -928,15 +928,7 @@ CREATE TABLE violacao.ft_venda_violacao
         CONSTRAINT df_ft_venda_violacao_data DEFAULT SYSDATETIME(),
 
     CONSTRAINT pk_ft_venda_violacao
-        PRIMARY KEY (id_violacao),
-
-    CONSTRAINT fk_violacao_pedido
-        FOREIGN KEY (pedido_id)
-        REFERENCES stg.stg_pedidos (pedido_id),
-
-    CONSTRAINT fk_violacao_item_pedido
-        FOREIGN KEY (item_pedido_id)
-        REFERENCES stg.stg_itens_pedido (item_pedido_id)
+        PRIMARY KEY (id_violacao)
 );
 GO
 
@@ -954,5 +946,9 @@ GO
 
 CREATE INDEX ix_violacao_data
     ON violacao.ft_venda_violacao (data_violacao);
+GO
+
+CREATE INDEX ix_violacao_lote
+    ON violacao.ft_venda_violacao (lote_execucao);
 GO
 
