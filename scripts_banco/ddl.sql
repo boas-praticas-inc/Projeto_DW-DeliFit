@@ -485,7 +485,10 @@ CREATE TABLE dw.dim_restaurante
     cidade              VARCHAR(100),
     estado              CHAR(2),
     data_cadastro       DATE,
-    ativo               BIT NOT NULL
+    ativo               BIT NOT NULL,
+    data_inicio         DATETIME NOT NULL,
+    data_fim            DATETIME NULL ,
+    registro_ativo      BIT NOT NULL
 );
 GO
 
