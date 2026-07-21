@@ -88,13 +88,15 @@ O ambiente operacional é composto pelas seguintes entidades:
 
 ## Fato
 
-- Fato Vendas
+`dw.ft_venda` — uma linha por item de pedido.
 
 ## Dimensões
 
 - Dim Tempo
 - Dim Cliente
 - Dim Restaurante
+- Dim Endereço
+- Dim Status
 - Dim Item
 - Dim Pagamento
 
@@ -161,6 +163,18 @@ O fluxo ETL é composto pelas seguintes etapas:
 
 ## Como rodar o projeto
 
+### Regras atuais do ETL
+
+As regras de qualidade ficam centralizadas em `dw.sp_validar_staging`.
+Essa procedure gera um `lote_execucao`, registra as violações em
+`violacao.ft_venda_violacao` e o mesmo lote é enviado para
+`dw.sp_carregar_ft_venda`. A fato carrega somente pedidos e itens sem
+violação naquele lote.
+
+As dimensões SCD Tipo 2 são associadas à fato pela versão válida na data do
+pedido. Pedidos cancelados permanecem na fato para análises operacionais,
+mas são excluídos dos agregados e indicadores financeiros.
+
 O projeto utiliza SQL Server. Os scripts devem ser executados no SQL Server
 Management Studio ou pelo `sqlcmd`, respeitando a ordem abaixo.
 
@@ -173,7 +187,9 @@ Execute os arquivos da pasta `scripts_banco/ddl` nesta ordem:
 3. `02_dw_tabelas.sql`;
 4. `03_staging_tabelas.sql`;
 5. `04_violacoes.sql`;
-6. `05_agregados.sql`.
+6. `05_agregados.sql`;
+7. `06_views.sql`.
+
 
 ### 2. Criar e povoar o ambiente operacional
 
@@ -195,7 +211,7 @@ automaticamente:
 
 ### 4. Executar o ETL
 
-Execute o arquivo `scripts_banco/execucao/01_executar_etl.sql`. Ele realiza,
+Execute o arquivo `scripts_banco/execucao/executar_etl.sql`. Ele realiza,
 na ordem, a extração Full Load para a staging, a validação, a carga das
 dimensões, a carga da fato e a atualização dos agregados.
 
@@ -203,7 +219,7 @@ dimensões, a carga da fato e a atualização dos agregados.
 
 Depois do ETL, execute:
 
-`verificacao/consultas_verificacao_indicadores.sql`
+`scripts_banco/verificacao/consultas_verificacao_indicadores.sql`
 
 Os arquivos de definição apenas criam tabelas e procedures. As execuções
 foram separadas em scripts próprios para evitar cargas acidentais ao abrir ou
