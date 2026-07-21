@@ -14,9 +14,10 @@ GO
 
    Exemplo de ordem de execucao:
    -- EXEC stg.sp_extrair_staging_completo;
-   -- EXEC dw.sp_validar_staging;
+   -- DECLARE @lote_execucao INT;
+   -- EXEC dw.sp_validar_staging @lote_execucao = @lote_execucao OUTPUT;
    -- EXEC dw.sp_carregar_dimensoes;
-   -- EXEC dw.sp_carregar_ft_venda;
+   -- EXEC dw.sp_carregar_ft_venda @lote_execucao = @lote_execucao;
    -- EXEC dw.sp_carga_agregados;
 
    Observacao:
@@ -102,6 +103,9 @@ WITH pedidos AS
     SELECT ft.pedido_id,
            SUM(ft.valor_total_item + ft.valor_frete_rateado) AS valor_total_pedido
     FROM dw.ft_venda AS ft
+    INNER JOIN dw.dim_status AS ds
+        ON ds.id_status = ft.id_status
+    WHERE ds.status_pedido <> 'CANCELADO'
     GROUP BY ft.pedido_id
 )
 SELECT COUNT(*) AS quantidade_pedidos,
@@ -241,10 +245,13 @@ SELECT TOP (10)
 FROM dw.ft_venda AS ft
 INNER JOIN dw.dim_cliente AS dc
     ON dc.id_cliente = ft.id_cliente
+INNER JOIN dw.dim_status AS ds
+    ON ds.id_status = ft.id_status
 INNER JOIN oltp.clientes AS c
     ON c.cliente_id = dc.cliente_id
 INNER JOIN oltp.usuarios AS u
     ON u.usuario_id = c.usuario_id
+WHERE ds.status_pedido <> 'CANCELADO'
 GROUP BY dc.cliente_id, u.nome
 ORDER BY quantidade_pedidos DESC, valor_total_gasto DESC;
 GO
@@ -270,10 +277,13 @@ SELECT TOP (10)
 FROM dw.ft_venda AS ft
 INNER JOIN dw.dim_cliente AS dc
     ON dc.id_cliente = ft.id_cliente
+INNER JOIN dw.dim_status AS ds
+    ON ds.id_status = ft.id_status
 INNER JOIN oltp.clientes AS c
     ON c.cliente_id = dc.cliente_id
 INNER JOIN oltp.usuarios AS u
     ON u.usuario_id = c.usuario_id
+WHERE ds.status_pedido <> 'CANCELADO'
 GROUP BY dc.cliente_id, u.nome
 ORDER BY valor_total_gasto DESC, quantidade_pedidos DESC;
 GO
@@ -298,10 +308,13 @@ SELECT dc.cliente_id,
 FROM dw.ft_venda AS ft
 INNER JOIN dw.dim_cliente AS dc
     ON dc.id_cliente = ft.id_cliente
+INNER JOIN dw.dim_status AS ds
+    ON ds.id_status = ft.id_status
 INNER JOIN oltp.clientes AS c
     ON c.cliente_id = dc.cliente_id
 INNER JOIN oltp.usuarios AS u
     ON u.usuario_id = c.usuario_id
+WHERE ds.status_pedido <> 'CANCELADO'
 GROUP BY dc.cliente_id, u.nome
 ORDER BY ticket_medio_cliente DESC, valor_total_gasto DESC;
 GO
@@ -323,6 +336,9 @@ SELECT TOP (10)
 FROM dw.ft_venda AS ft
 INNER JOIN dw.dim_item AS i
     ON i.id_item = ft.id_item
+INNER JOIN dw.dim_status AS ds
+    ON ds.id_status = ft.id_status
+WHERE ds.status_pedido <> 'CANCELADO'
 GROUP BY i.item_cardapio_id, i.nome, i.categoria
 ORDER BY quantidade_vendida DESC, receita_item DESC;
 GO

@@ -38,7 +38,11 @@ BEGIN
     SELECT
         s.restaurante_id, s.nome_fantasia, s.cidade, s.estado,
         CAST(s.data_cadastro AS DATE), s.ativo,
-        @agora, NULL, 1
+        CASE WHEN EXISTS (
+            SELECT 1 FROM dw.dim_restaurante historico
+            WHERE historico.restaurante_id = s.restaurante_id
+        ) THEN @agora ELSE CONVERT(DATETIME, '19000101') END,
+        NULL, 1
     FROM stg.stg_restaurantes s
     WHERE s.restaurante_id IN (SELECT restaurante_id FROM @alterados)
        OR NOT EXISTS (
@@ -116,7 +120,11 @@ BEGIN
         (cliente_id, faixa_etaria, idade, data_cadastro, data_inicio, data_fim, registro_ativo)
     SELECT
         o.cliente_id, o.faixa_etaria, o.idade, o.data_cadastro,
-        @agora, NULL, 1
+        CASE WHEN EXISTS (
+            SELECT 1 FROM dw.dim_cliente historico
+            WHERE historico.cliente_id = o.cliente_id
+        ) THEN @agora ELSE CONVERT(DATETIME, '19000101') END,
+        NULL, 1
     FROM #origem_cliente o
     WHERE o.cliente_id IN (SELECT cliente_id FROM @alterados)
        OR NOT EXISTS (
@@ -166,7 +174,11 @@ BEGIN
          data_inicio, data_fim, registro_ativo)
     SELECT
         s.endereco_id, s.cep, s.logradouro, s.bairro, s.numero, s.cidade, s.estado, s.complemento,
-        @agora, NULL, 1
+        CASE WHEN EXISTS (
+            SELECT 1 FROM dw.dim_endereco historico
+            WHERE historico.endereco_id = s.endereco_id
+        ) THEN @agora ELSE CONVERT(DATETIME, '19000101') END,
+        NULL, 1
     FROM stg.stg_enderecos s
     WHERE s.endereco_id IN (SELECT endereco_id FROM @alterados)
        OR NOT EXISTS (
@@ -241,7 +253,11 @@ BEGIN
     SELECT
         o.item_cardapio_id, o.nome, o.categoria, o.calorias, o.proteinas, o.carboidratos, o.gorduras,
         o.restricao_alimentar, o.faixa_preco, o.disponivel, o.preco_atual,
-        @agora, NULL, 1
+        CASE WHEN EXISTS (
+            SELECT 1 FROM dw.dim_item historico
+            WHERE historico.item_cardapio_id = o.item_cardapio_id
+        ) THEN @agora ELSE CONVERT(DATETIME, '19000101') END,
+        NULL, 1
     FROM #origem_item o
     WHERE o.item_cardapio_id IN (SELECT item_cardapio_id FROM @alterados)
        OR NOT EXISTS (

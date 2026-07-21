@@ -40,6 +40,9 @@ BEGIN
         FROM dw.ft_venda AS ft
         INNER JOIN dw.dim_tempo AS dt
             ON dt.id_tempo = ft.id_tempo
+        INNER JOIN dw.dim_status AS ds
+            ON ds.id_status = ft.id_status
+        WHERE ds.status_pedido <> 'CANCELADO'
         GROUP BY
             ft.id_tempo,
             dt.data;
@@ -94,6 +97,9 @@ BEGIN
         FROM dw.ft_venda AS ft
         INNER JOIN dw.dim_tempo AS dt
             ON dt.id_tempo = ft.id_tempo
+        INNER JOIN dw.dim_status AS ds
+            ON ds.id_status = ft.id_status
+        WHERE ds.status_pedido <> 'CANCELADO'
         GROUP BY
             dt.ano,
             dt.mes;
@@ -144,6 +150,9 @@ BEGIN
             ),
             SYSDATETIME()
         FROM dw.ft_venda AS ft
+        INNER JOIN dw.dim_status AS ds
+            ON ds.id_status = ft.id_status
+        WHERE ds.status_pedido <> 'CANCELADO'
         GROUP BY
             ft.id_restaurante;
 
@@ -193,6 +202,9 @@ BEGIN
         FROM dw.ft_venda AS ft
         INNER JOIN dw.dim_item AS di
             ON di.id_item = ft.id_item
+        INNER JOIN dw.dim_status AS ds
+            ON ds.id_status = ft.id_status
+        WHERE ds.status_pedido <> 'CANCELADO'
         GROUP BY
             COALESCE(NULLIF(LTRIM(RTRIM(di.categoria)), ''), 'SEM CATEGORIA');
 
@@ -242,6 +254,9 @@ BEGIN
             ),
             SYSDATETIME()
         FROM dw.ft_venda AS ft
+        INNER JOIN dw.dim_status AS ds
+            ON ds.id_status = ft.id_status
+        WHERE ds.status_pedido <> 'CANCELADO'
         GROUP BY
             ft.id_cliente;
 

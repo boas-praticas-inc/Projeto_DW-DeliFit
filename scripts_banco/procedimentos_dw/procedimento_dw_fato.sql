@@ -6,10 +6,14 @@ GO
 */
 
 CREATE OR ALTER PROCEDURE dw.sp_carregar_ft_venda
+    @lote_execucao INT
 AS
 BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
+
+    IF @lote_execucao IS NULL
+        THROW 51002, 'O lote de validacao deve ser informado.', 1;
 
     BEGIN TRY
         BEGIN TRANSACTION;
@@ -54,30 +58,59 @@ BEGIN
             ON tc.data = CAST(p.cancelado_em AS DATE)
         LEFT JOIN dw.dim_tempo AS tp
             ON tp.data = CAST(p.pago_em AS DATE)
-        INNER JOIN dw.dim_cliente AS c
-            ON c.cliente_id = p.cliente_id
-           AND c.registro_ativo = 1
-        INNER JOIN dw.dim_endereco AS e
-            ON e.endereco_id = p.endereco_entrega_id
-           AND e.registro_ativo = 1
-        INNER JOIN dw.dim_restaurante AS r
-            ON r.restaurante_id = p.restaurante_id
-           AND r.registro_ativo = 1
-        INNER JOIN dw.dim_item AS i
-            ON i.item_cardapio_id = ip.item_cardapio_id
-           AND i.registro_ativo = 1
+        CROSS APPLY
+        (
+            SELECT TOP (1) d.id_cliente
+            FROM dw.dim_cliente AS d
+            WHERE d.cliente_id = p.cliente_id
+              AND d.data_inicio <= p.criado_em
+              AND (d.data_fim IS NULL OR p.criado_em < d.data_fim)
+            ORDER BY d.data_inicio DESC
+        ) AS c
+        CROSS APPLY
+        (
+            SELECT TOP (1) d.id_endereco
+            FROM dw.dim_endereco AS d
+            WHERE d.endereco_id = p.endereco_entrega_id
+              AND d.data_inicio <= p.criado_em
+              AND (d.data_fim IS NULL OR p.criado_em < d.data_fim)
+            ORDER BY d.data_inicio DESC
+        ) AS e
+        CROSS APPLY
+        (
+            SELECT TOP (1) d.id_restaurante
+            FROM dw.dim_restaurante AS d
+            WHERE d.restaurante_id = p.restaurante_id
+              AND d.data_inicio <= p.criado_em
+              AND (d.data_fim IS NULL OR p.criado_em < d.data_fim)
+            ORDER BY d.data_inicio DESC
+        ) AS r
+        CROSS APPLY
+        (
+            SELECT TOP (1) d.id_item
+            FROM dw.dim_item AS d
+            WHERE d.item_cardapio_id = ip.item_cardapio_id
+              AND d.data_inicio <= p.criado_em
+              AND (d.data_fim IS NULL OR p.criado_em < d.data_fim)
+            ORDER BY d.data_inicio DESC
+        ) AS i
         INNER JOIN dw.dim_pagamento AS pg
             ON pg.forma_pagamento = p.forma_pagamento
            AND pg.status_pagamento = p.status_pagamento
         INNER JOIN dw.dim_status AS st
             ON st.status_pedido = p.status_pedido
         WHERE p.criado_em IS NOT NULL
-          AND p.valor_subtotal IS NOT NULL
-          AND p.valor_frete IS NOT NULL
-          AND p.valor_total = p.valor_subtotal + p.valor_frete
-          AND ip.preco_unitario_snapshot IS NOT NULL
-          AND ip.quantidade > 0
-          AND ip.valor_total_item = ip.preco_unitario_snapshot * ip.quantidade;
+          AND NOT EXISTS
+          (
+              SELECT 1
+              FROM violacao.ft_venda_violacao AS v
+              WHERE v.lote_execucao = @lote_execucao
+                AND v.pedido_id = p.pedido_id
+                AND (
+                    v.item_pedido_id IS NULL
+                    OR v.item_pedido_id = ip.item_pedido_id
+                )
+          );
 
         /* Atualiza linhas já existentes quando o pedido muda de status,
            pagamento ou recebe a data de entrega/cancelamento. */
