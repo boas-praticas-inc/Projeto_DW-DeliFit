@@ -332,4 +332,4 @@ GO
 
 
 
---EXEC dw.sp_carregar_dimensoes;
+EXEC dw.sp_carregar_dimensoes;

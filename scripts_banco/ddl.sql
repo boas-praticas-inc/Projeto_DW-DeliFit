@@ -627,7 +627,7 @@ GO
 
 CREATE TABLE stg.stg_usuarios
 (
-    usuario_id       BIGINT       NOT NULL,
+    usuario_id       BIGINT       NOT NULL  PRIMARY KEY ,
     nome             VARCHAR(150) NULL,
     email            VARCHAR(150) NULL,
     telefone         VARCHAR(20)  NULL,
@@ -637,8 +637,7 @@ CREATE TABLE stg.stg_usuarios
     dt_extracao      DATETIME     NOT NULL
         CONSTRAINT df_stg_usuarios_dt_extracao DEFAULT SYSDATETIME(),
 
-    CONSTRAINT pk_stg_usuarios
-        PRIMARY KEY (usuario_id)
+
 );
 GO
 
@@ -646,14 +645,13 @@ GO
 
 CREATE TABLE stg.stg_clientes
 (
-    cliente_id       BIGINT   NOT NULL,
+    cliente_id       BIGINT   NOT NULL  PRIMARY KEY ,
     usuario_id       BIGINT   NULL,
     data_nascimento  DATE     NULL,
     dt_extracao      DATETIME NOT NULL
         CONSTRAINT df_stg_clientes_dt_extracao DEFAULT SYSDATETIME(),
 
-    CONSTRAINT pk_stg_clientes
-        PRIMARY KEY (cliente_id)
+
 );
 GO
 
@@ -661,7 +659,7 @@ GO
 
 CREATE TABLE stg.stg_enderecos
 (
-    endereco_id         BIGINT       NOT NULL,
+    endereco_id         BIGINT       NOT NULL   PRIMARY KEY ,
     cliente_id          BIGINT       NULL,
     nome_endereco       VARCHAR(50)  NULL,
     cep                 VARCHAR(9)   NULL,
@@ -676,8 +674,6 @@ CREATE TABLE stg.stg_enderecos
     dt_extracao         DATETIME     NOT NULL
         CONSTRAINT df_stg_enderecos_dt_extracao DEFAULT SYSDATETIME(),
 
-    CONSTRAINT pk_stg_enderecos
-        PRIMARY KEY (endereco_id)
 );
 GO
 
@@ -685,7 +681,7 @@ GO
 
 CREATE TABLE stg.stg_restaurantes
 (
-    restaurante_id   BIGINT       NOT NULL,
+    restaurante_id   BIGINT       NOT NULL  PRIMARY KEY ,
     usuario_id       BIGINT       NULL,
     nome_fantasia    VARCHAR(150) NULL,
     cnpj             VARCHAR(18)  NULL,
@@ -703,8 +699,6 @@ CREATE TABLE stg.stg_restaurantes
     dt_extracao      DATETIME     NOT NULL
         CONSTRAINT df_stg_restaurantes_dt_extracao DEFAULT SYSDATETIME(),
 
-    CONSTRAINT pk_stg_restaurantes
-        PRIMARY KEY (restaurante_id)
 );
 GO
 
@@ -712,15 +706,13 @@ GO
 
 CREATE TABLE stg.stg_categorias_cardapio
 (
-    categoria_id     INT          NOT NULL,
+    categoria_id     INT          NOT NULL  PRIMARY KEY ,
     nome             VARCHAR(100) NULL,
     descricao        VARCHAR(300) NULL,
     ativo            BIT          NULL,
     dt_extracao      DATETIME     NOT NULL
         CONSTRAINT df_stg_categorias_dt_extracao DEFAULT SYSDATETIME(),
 
-    CONSTRAINT pk_stg_categorias_cardapio
-        PRIMARY KEY (categoria_id)
 );
 GO
 
@@ -728,7 +720,7 @@ GO
 
 CREATE TABLE stg.stg_itens_cardapio
 (
-    item_cardapio_id     BIGINT        NOT NULL,
+    item_cardapio_id     BIGINT        NOT NULL     PRIMARY KEY ,
     restaurante_id       BIGINT        NULL,
     categoria_id         INT           NULL,
     nome                 VARCHAR(150)  NULL,
@@ -744,8 +736,6 @@ CREATE TABLE stg.stg_itens_cardapio
     dt_extracao          DATETIME      NOT NULL
         CONSTRAINT df_stg_itens_cardapio_dt_extracao DEFAULT SYSDATETIME(),
 
-    CONSTRAINT pk_stg_itens_cardapio
-        PRIMARY KEY (item_cardapio_id)
 );
 GO
 
@@ -753,7 +743,7 @@ GO
 
 CREATE TABLE stg.stg_pedidos
 (
-    pedido_id               BIGINT        NOT NULL,
+    pedido_id               BIGINT        NOT NULL  PRIMARY KEY ,
     cliente_id              BIGINT        NULL,
     restaurante_id          BIGINT        NULL,
     endereco_entrega_id     BIGINT        NULL,
@@ -772,8 +762,6 @@ CREATE TABLE stg.stg_pedidos
     dt_extracao             DATETIME      NOT NULL
         CONSTRAINT df_stg_pedidos_dt_extracao DEFAULT SYSDATETIME(),
 
-    CONSTRAINT pk_stg_pedidos
-        PRIMARY KEY (pedido_id)
 );
 GO
 
@@ -781,7 +769,7 @@ GO
 
 CREATE TABLE stg.stg_itens_pedido
 (
-    item_pedido_id          BIGINT        NOT NULL,
+    item_pedido_id          BIGINT        NOT NULL  PRIMARY KEY ,
     pedido_id               BIGINT        NULL,
     item_cardapio_id        BIGINT        NULL,
     nome_item_snapshot      VARCHAR(150)  NULL,
@@ -792,8 +780,6 @@ CREATE TABLE stg.stg_itens_pedido
     dt_extracao              DATETIME     NOT NULL
         CONSTRAINT df_stg_itens_pedido_dt_extracao DEFAULT SYSDATETIME(),
 
-    CONSTRAINT pk_stg_itens_pedido
-        PRIMARY KEY (item_pedido_id)
 );
 GO
 
@@ -853,7 +839,7 @@ GO
 
 CREATE TABLE violacao.ft_venda_violacao
 (
-    id_violacao       BIGINT IDENTITY(1,1) NOT NULL,
+    id_violacao       BIGINT IDENTITY(1,1) NOT NULL     PRIMARY KEY,
     lote_execucao     INT           NOT NULL,
     pedido_id         BIGINT        NOT NULL,
     item_pedido_id    BIGINT        NULL,
@@ -863,8 +849,6 @@ CREATE TABLE violacao.ft_venda_violacao
     data_violacao     DATETIME      NOT NULL
         CONSTRAINT df_ft_venda_violacao_data DEFAULT SYSDATETIME(),
 
-    CONSTRAINT pk_ft_venda_violacao
-        PRIMARY KEY (id_violacao)
 );
 GO
 
@@ -884,5 +868,161 @@ GO
 
 CREATE INDEX ix_violacao_lote
     ON violacao.ft_venda_violacao (lote_execucao);
+GO
+
+
+/*
+   Criação de Agregados
+   1. AGREGADO DE VENDAS DIÁRIAS
+*/
+
+IF OBJECT_ID('dw.agg_vendas_diarias', 'U') IS NULL
+BEGIN
+    CREATE TABLE dw.agg_vendas_diarias
+    (
+        id_tempo                  INT             NOT NULL,
+        data_venda                DATE            NOT NULL,
+        quantidade_pedidos        BIGINT          NOT NULL,
+        quantidade_itens_vendidos BIGINT          NOT NULL,
+        faturamento_diario        DECIMAL(18,2)   NOT NULL,
+        ticket_medio_diario       DECIMAL(18,2)   NOT NULL,
+        data_carga                DATETIME2       NOT NULL
+            CONSTRAINT df_agg_vendas_diarias_data_carga DEFAULT SYSDATETIME(),
+
+        CONSTRAINT pk_agg_vendas_diarias
+            PRIMARY KEY (id_tempo),
+
+        CONSTRAINT fk_agg_vendas_diarias_tempo
+            FOREIGN KEY (id_tempo)
+            REFERENCES dw.dim_tempo(id_tempo)
+    );
+END;
+GO
+
+/*
+   2. AGREGADO DE VENDAS MENSAIS
+ */
+
+IF OBJECT_ID('dw.agg_vendas_mensais', 'U') IS NULL
+BEGIN
+    CREATE TABLE dw.agg_vendas_mensais
+    (
+        ano                       SMALLINT        NOT NULL,
+        mes                       TINYINT         NOT NULL,
+        quantidade_pedidos        BIGINT          NOT NULL,
+        quantidade_itens_vendidos BIGINT          NOT NULL,
+        faturamento_mensal        DECIMAL(18,2)   NOT NULL,
+        ticket_medio_mensal       DECIMAL(18,2)   NOT NULL,
+        data_carga                DATETIME2       NOT NULL
+            CONSTRAINT df_agg_vendas_mensais_data_carga DEFAULT SYSDATETIME(),
+
+        CONSTRAINT pk_agg_vendas_mensais
+            PRIMARY KEY (ano, mes),
+
+        CONSTRAINT ck_agg_vendas_mensais_mes
+            CHECK (mes BETWEEN 1 AND 12)
+    );
+END;
+GO
+
+/*
+   3. AGREGADO DE VENDAS POR RESTAURANTE
+*/
+
+IF OBJECT_ID('dw.agg_vendas_restaurante', 'U') IS NULL
+BEGIN
+    CREATE TABLE dw.agg_vendas_restaurante
+    (
+        id_restaurante            INT             NOT NULL,
+        quantidade_pedidos        BIGINT          NOT NULL,
+        quantidade_itens_vendidos BIGINT          NOT NULL,
+        faturamento               DECIMAL(18,2)   NOT NULL,
+        ticket_medio              DECIMAL(18,2)   NOT NULL,
+        data_carga                DATETIME2       NOT NULL
+            CONSTRAINT df_agg_vendas_restaurante_data_carga DEFAULT SYSDATETIME(),
+
+        CONSTRAINT pk_agg_vendas_restaurante
+            PRIMARY KEY (id_restaurante),
+
+        CONSTRAINT fk_agg_vendas_restaurante
+            FOREIGN KEY (id_restaurante)
+            REFERENCES dw.dim_restaurante(id_restaurante)
+    );
+END;
+GO
+
+/*
+   4. AGREGADO DE VENDAS POR CATEGORIA
+*/
+
+IF OBJECT_ID('dw.agg_vendas_categoria', 'U') IS NULL
+BEGIN
+    CREATE TABLE dw.agg_vendas_categoria
+    (
+        categoria                 VARCHAR(100)    NOT NULL,
+        quantidade_itens_vendidos BIGINT          NOT NULL,
+        receita_categoria         DECIMAL(18,2)   NOT NULL,
+        valor_medio_itens_vendidos DECIMAL(18,2)  NOT NULL,
+        data_carga                DATETIME2       NOT NULL
+            CONSTRAINT df_agg_vendas_categoria_data_carga DEFAULT SYSDATETIME(),
+
+        CONSTRAINT pk_agg_vendas_categoria
+            PRIMARY KEY (categoria)
+    );
+END;
+GO
+
+/*
+   5. AGREGADO DE VENDAS POR CLIENTE
+*/
+
+IF OBJECT_ID('dw.agg_vendas_cliente', 'U') IS NULL
+BEGIN
+    CREATE TABLE dw.agg_vendas_cliente
+    (
+        id_cliente                INT             NOT NULL,
+        quantidade_pedidos        BIGINT          NOT NULL,
+        quantidade_itens_comprados BIGINT         NOT NULL,
+        valor_total_gasto         DECIMAL(18,2)   NOT NULL,
+        ticket_medio_cliente      DECIMAL(18,2)   NOT NULL,
+        data_carga                DATETIME2       NOT NULL
+            CONSTRAINT df_agg_vendas_cliente_data_carga DEFAULT SYSDATETIME(),
+
+        CONSTRAINT pk_agg_vendas_cliente
+            PRIMARY KEY (id_cliente),
+
+        CONSTRAINT fk_agg_vendas_cliente
+            FOREIGN KEY (id_cliente)
+            REFERENCES dw.dim_cliente(id_cliente)
+    );
+END;
+GO
+
+/*
+   ÍNDICES
+*/
+
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.indexes
+    WHERE name = 'ix_agg_vendas_diarias_data'
+      AND object_id = OBJECT_ID('dw.agg_vendas_diarias')
+)
+BEGIN
+    CREATE INDEX ix_agg_vendas_diarias_data
+        ON dw.agg_vendas_diarias(data_venda);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.indexes
+    WHERE name = 'ix_agg_vendas_mensais_ano_mes'
+      AND object_id = OBJECT_ID('dw.agg_vendas_mensais')
+)
+BEGIN
+    CREATE INDEX ix_agg_vendas_mensais_ano_mes
+        ON dw.agg_vendas_mensais(ano, mes);
+END;
 GO
 
