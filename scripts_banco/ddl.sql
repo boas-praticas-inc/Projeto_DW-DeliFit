@@ -1,12 +1,10 @@
-/* =========================================================
+/*
    BANCO DE DADOS: DELIFIT
    SGBD: SQL SERVER
    AMBIENTE: OLTP
-   ========================================================= */
+*/
 
-/* =========================================================
-    DDL
-   ========================================================= */
+--DDL
 
 USE master;
 GO
@@ -20,9 +18,7 @@ GO
 USE DeliFitDB;
 GO
 
-/* =========================================================
-   Criação  schema OLTP
-   ========================================================= */
+--Criação  schema OLTP
 
 IF NOT EXISTS (
     SELECT 1
@@ -34,9 +30,7 @@ BEGIN
 END;
 GO
 
-/* =========================================================
-   1. USUÁRIOS
-   ========================================================= */
+--1. USUÁRIOS
 
 CREATE TABLE oltp.usuarios
 (
@@ -62,9 +56,7 @@ CREATE TABLE oltp.usuarios
 );
 GO
 
-/* =========================================================
-   2. CLIENTES
-   ========================================================= */
+--2. CLIENTES
 
 CREATE TABLE oltp.clientes
 (
@@ -84,9 +76,7 @@ CREATE TABLE oltp.clientes
 );
 GO
 
-/* =========================================================
-   3. ENDEREÇOS
-   ========================================================= */
+--3. ENDEREÇOS
 
 CREATE TABLE oltp.enderecos
 (
@@ -117,9 +107,7 @@ CREATE TABLE oltp.enderecos
 );
 GO
 
-/* =========================================================
-   4. RESTAURANTES
-   ========================================================= */
+--4. RESTAURANTES
 
 CREATE TABLE oltp.restaurantes
 (
@@ -161,9 +149,7 @@ CREATE TABLE oltp.restaurantes
 );
 GO
 
-/* =========================================================
-   5. CATEGORIAS DO CARDÁPIO
-   ========================================================= */
+--5. CATEGORIAS DO CARDÁPIO
 
 CREATE TABLE oltp.categorias_cardapio
 (
@@ -181,9 +167,7 @@ CREATE TABLE oltp.categorias_cardapio
 );
 GO
 
-/* =========================================================
-   6. ITENS DO CARDÁPIO
-   ========================================================= */
+--6. ITENS DO CARDÁPIO
 
 CREATE TABLE oltp.itens_cardapio
 (
@@ -233,9 +217,7 @@ CREATE TABLE oltp.itens_cardapio
 );
 GO
 
-/* =========================================================
-   7. PEDIDOS
-   ========================================================= */
+--7. PEDIDOS
 
 CREATE TABLE oltp.pedidos
 (
@@ -350,9 +332,7 @@ CREATE TABLE oltp.pedidos
 );
 GO
 
-/* =========================================================
-   8. ITENS DO PEDIDO
-   ========================================================= */
+--8. ITENS DO PEDIDO
 
 CREATE TABLE oltp.itens_pedido
 (
@@ -392,9 +372,7 @@ CREATE TABLE oltp.itens_pedido
 );
 GO
 
-/* =========================================================
-   Indices
-   ========================================================= */
+--Indices
 
 CREATE INDEX ix_enderecos_cliente
     ON oltp.enderecos (cliente_id);
@@ -432,9 +410,7 @@ CREATE INDEX ix_itens_pedido_item
     ON oltp.itens_pedido (item_cardapio_id);
 GO
 
-/* =========================================================
-   Criação Schema DW
-   ========================================================= */
+--Criação Schema DW
 
 IF NOT EXISTS (
     SELECT *
@@ -446,11 +422,9 @@ BEGIN
 END;
 GO
 
-/* Criação das dimensões */
+--Criação das dimensões
 
-/*=========================================================
-    1.DIMENSÃO TEMPO
-=========================================================*/
+--1.DIMENSÃO TEMPO
 
 CREATE TABLE dw.dim_tempo
 (
@@ -467,10 +441,7 @@ CREATE TABLE dw.dim_tempo
 );
 GO
 
-
-/*=========================================================
-    2.DIMENSÃO CLIENTE
-=========================================================*/
+--2.DIMENSÃO CLIENTE
 
 CREATE TABLE dw.dim_cliente
 (
@@ -485,9 +456,7 @@ CREATE TABLE dw.dim_cliente
 );
 GO
 
-/*=========================================================
-    3.DIMENSÃO ENDEREÇO
-=========================================================*/
+--3.DIMENSÃO ENDEREÇO
 
 CREATE TABLE dw.dim_endereco
 (
@@ -506,9 +475,7 @@ CREATE TABLE dw.dim_endereco
 );
 GO
 
-/*=========================================================
-    4.DIMENSÃO RESTAURANTE
-=========================================================*/
+--4.DIMENSÃO RESTAURANTE
 
 CREATE TABLE dw.dim_restaurante
 (
@@ -522,9 +489,7 @@ CREATE TABLE dw.dim_restaurante
 );
 GO
 
-/*=========================================================
-    5.DIMENSÃO ITEM
-=========================================================*/
+--5.DIMENSÃO ITEM
 
 CREATE TABLE dw.dim_item
 (
@@ -546,9 +511,7 @@ CREATE TABLE dw.dim_item
 );
 GO
 
-/*=========================================================
-    6.DIMENSÃO PAGAMENTO
-=========================================================*/
+--6.DIMENSÃO PAGAMENTO
 
 CREATE TABLE dw.dim_pagamento
 (
@@ -562,9 +525,7 @@ ADD CONSTRAINT UQ_dim_pagamento
 UNIQUE (forma_pagamento, status_pagamento);
 GO
 
-/*=========================================================
-    7.DIMENSÃO STATUS
-=========================================================*/
+--7.DIMENSÃO STATUS
 
 CREATE TABLE dw.dim_status
 (
@@ -573,9 +534,8 @@ CREATE TABLE dw.dim_status
 );
 GO
 
-/*=========================================================
-    Criação do fato vendas
-  =========================================================*/
+--Criação do fato vendas
+
 CREATE TABLE dw.ft_venda
 (
     id_venda                BIGINT IDENTITY(1,1) PRIMARY KEY,
@@ -626,9 +586,7 @@ CREATE TABLE dw.ft_venda
 );
 GO
 
-/*=========================================================
-    ÍNDICES
-=========================================================*/
+--ÍNDICES
 
 CREATE INDEX IX_FT_TEMPO
 ON dw.ft_venda(id_tempo);
@@ -652,10 +610,7 @@ CREATE INDEX IX_FT_PEDIDO
 ON dw.ft_venda(pedido_id);
 GO
 
-
-/* =========================================================
-   Criação schema STG
-   ========================================================= */
+--Criação schema STG
 
 IF NOT EXISTS (
     SELECT 1 FROM sys.schemas WHERE name = 'stg'
@@ -665,9 +620,7 @@ BEGIN
 END;
 GO
 
-/* =========================================================
-   1. STG_USUARIOS
-   ========================================================= */
+--1. STG_USUARIOS
 
 CREATE TABLE stg.stg_usuarios
 (
@@ -686,9 +639,7 @@ CREATE TABLE stg.stg_usuarios
 );
 GO
 
-/* =========================================================
-   2. STG_CLIENTES
-   ========================================================= */
+--2. STG_CLIENTES
 
 CREATE TABLE stg.stg_clientes
 (
@@ -703,9 +654,7 @@ CREATE TABLE stg.stg_clientes
 );
 GO
 
-/* =========================================================
-   3. STG_ENDERECOS
-   ========================================================= */
+--3. STG_ENDERECOS
 
 CREATE TABLE stg.stg_enderecos
 (
@@ -729,9 +678,7 @@ CREATE TABLE stg.stg_enderecos
 );
 GO
 
-/* =========================================================
-   4. STG_RESTAURANTES
-   ========================================================= */
+--4. STG_RESTAURANTES
 
 CREATE TABLE stg.stg_restaurantes
 (
@@ -758,9 +705,7 @@ CREATE TABLE stg.stg_restaurantes
 );
 GO
 
-/* =========================================================
-   5. STG_CATEGORIAS_CARDAPIO
-   ========================================================= */
+--5. STG_CATEGORIAS_CARDAPIO
 
 CREATE TABLE stg.stg_categorias_cardapio
 (
@@ -776,9 +721,7 @@ CREATE TABLE stg.stg_categorias_cardapio
 );
 GO
 
-/* =========================================================
-   6. STG_ITENS_CARDAPIO
-   ========================================================= */
+--6. STG_ITENS_CARDAPIO
 
 CREATE TABLE stg.stg_itens_cardapio
 (
@@ -803,9 +746,7 @@ CREATE TABLE stg.stg_itens_cardapio
 );
 GO
 
-/* =========================================================
-   7. STG_PEDIDOS
-   ========================================================= */
+--7. STG_PEDIDOS
 
 CREATE TABLE stg.stg_pedidos
 (
@@ -833,9 +774,7 @@ CREATE TABLE stg.stg_pedidos
 );
 GO
 
-/* =========================================================
-   8. STG_ITENS_PEDIDO
-   ========================================================= */
+--8. STG_ITENS_PEDIDO
 
 CREATE TABLE stg.stg_itens_pedido
 (
@@ -855,9 +794,7 @@ CREATE TABLE stg.stg_itens_pedido
 );
 GO
 
-/* =========================================================
-   ÍNDICES
-   ========================================================= */
+--ÍNDICES
 
 CREATE INDEX ix_stg_clientes_usuario
     ON stg.stg_clientes (usuario_id);
@@ -899,10 +836,8 @@ CREATE INDEX ix_stg_itens_pedido_item
     ON stg.stg_itens_pedido (item_cardapio_id);
 GO
 
+--Criação schema violação
 
-/* =========================================================
-   Criação schema violação
-   ========================================================= */
 IF NOT EXISTS (
     SELECT 1 FROM sys.schemas WHERE name = 'violacao'
 )
@@ -911,9 +846,7 @@ BEGIN
 END;
 GO
 
-/* =========================================================
-   VIOLACAO.FT_VENDA_VIOLACAO  -> uma linha por inconsistência encontrada.
-   ========================================================= */
+--VIOLACAO.FT_VENDA_VIOLACAO  -> uma linha por inconsistência encontrada.
 
 CREATE TABLE violacao.ft_venda_violacao
 (
@@ -932,9 +865,7 @@ CREATE TABLE violacao.ft_venda_violacao
 );
 GO
 
-/* =========================================================
-   ÍNDICES
-   ========================================================= */
+--ÍNDICES
 
 CREATE INDEX ix_violacao_pedido
     ON violacao.ft_venda_violacao (pedido_id);

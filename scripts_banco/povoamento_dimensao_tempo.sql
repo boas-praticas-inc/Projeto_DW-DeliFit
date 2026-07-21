@@ -1,14 +1,12 @@
-/* =========================================================
-   POVOAMENTO_DIMENSAO_TEMPO
-   ========================================================= */
+--POVOAMENTO_DIMENSAO_TEMPO
 
 USE DeliFitDB;
 GO
 
-/* =========================================================
+/* 
    1. FUNCTION
    Algoritmo de Meeus ->  Usado para derivar os feriados móveis: Carnaval, Sexta-feira Santa, Páscoa e Corpus Christi.
-   ========================================================= */
+*/
 
 CREATE OR ALTER FUNCTION dw.fn_calcula_pascoa (@ano INT)
 RETURNS DATE
@@ -33,9 +31,7 @@ BEGIN
 END;
 GO
 
-/* =========================================================
-   2. POVOAMENTO DA DIM_TEMPO
-   ========================================================= */
+--2. POVOAMENTO DA DIM_TEMPO
 
 CREATE OR ALTER PROCEDURE dw.sp_povoar_dim_tempo
 (
@@ -55,9 +51,8 @@ BEGIN
     DECLARE @ano_inicio INT = YEAR(@data_inicio);
     DECLARE @ano_fim    INT = YEAR(@data_fim);
 
-    /* ---------------------------------------------------
-       2.1 Monta a lista de feriados nacionais do intervalo
-       --------------------------------------------------- */
+    --2.1 Monta a lista de feriados nacionais do intervalo
+
     CREATE TABLE #feriados (data_feriado DATE NOT NULL PRIMARY KEY);
 
     -- Feriados fixos + móveis, tudo em um único INSERT para que o UNION
@@ -85,9 +80,8 @@ BEGIN
     UNION SELECT DATEADD(DAY, 60,  dw.fn_calcula_pascoa(ano)) FROM anos  -- Corpus Christi
     OPTION (MAXRECURSION 1000);
 
-    /* ---------------------------------------------------
-       2.2 Gera as datas do intervalo (set-based, sem loop)
-       --------------------------------------------------- */
+--2.2 Gera as datas do intervalo (set-based, sem loop)
+
     DECLARE @qtd_dias INT = DATEDIFF(DAY, @data_inicio, @data_fim) + 1;
 
     ;WITH

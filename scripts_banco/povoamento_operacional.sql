@@ -1,8 +1,8 @@
 USE DeliFitDB;
 GO
-/*
-Procedura cadastrar clientes
-*/
+
+--Procedura cadastrar clientes
+
 CREATE OR ALTER PROCEDURE oltp.sp_cadastrar_cliente @nome VARCHAR(150),
                                                     @email VARCHAR(150),
                                                     @senha_hash VARCHAR(255),
@@ -65,11 +65,8 @@ BEGIN
 END;
 GO
 
+--2. Procedure para cadastrar endereço
 
-
-/*
-# 2. Procedure para cadastrar endereço
-*/
 CREATE OR ALTER PROCEDURE oltp.sp_cadastrar_endereco @cliente_id BIGINT,
                                                      @nome_endereco VARCHAR(50) = NULL,
                                                      @cep VARCHAR(9),
@@ -142,10 +139,8 @@ BEGIN
 END;
 GO
 
+--3. Procedure para cadastrar restaurante
 
-/*
-# 3. Procedure para cadastrar restaurante
-*/
 CREATE OR ALTER PROCEDURE oltp.sp_cadastrar_restaurante @nome_responsavel VARCHAR(150),
                                                         @email VARCHAR(150),
                                                         @senha_hash VARCHAR(255),
@@ -250,9 +245,8 @@ BEGIN
 END;
 GO
 
-/*
-# 4. Procedure para cadastrar categoria
-*/
+--4. Procedure para cadastrar categoria
+
 CREATE OR ALTER PROCEDURE oltp.sp_cadastrar_categoria @nome VARCHAR(100),
                                                       @descricao VARCHAR(300) = NULL,
                                                       @categoria_id INT OUTPUT
@@ -283,9 +277,8 @@ BEGIN
 END;
 GO
 
-/*
-# 5. Procedure para cadastrar item do cardápio
-*/
+--5. Procedure para cadastrar item do cardápio
+
 CREATE OR ALTER PROCEDURE oltp.sp_cadastrar_item_cardapio @restaurante_id BIGINT,
                                                           @categoria_id INT,
                                                           @nome VARCHAR(150),
@@ -354,10 +347,8 @@ BEGIN
 END;
 GO
 
+--6. Procedure para criar pedido
 
-/*
-# 6. Procedure para criar pedido
-*/
 CREATE OR ALTER PROCEDURE oltp.sp_criar_pedido @cliente_id BIGINT,
                                                @restaurante_id BIGINT,
                                                @endereco_entrega_id BIGINT,
@@ -439,10 +430,8 @@ BEGIN
 END;
 GO
 
+--7. Procedure para adicionar item ao pedido
 
-/*
-# 7. Procedure para adicionar item ao pedido
-*/
 CREATE OR ALTER PROCEDURE oltp.sp_adicionar_item_pedido @pedido_id BIGINT,
                                                         @item_cardapio_id BIGINT,
                                                         @quantidade INT,
@@ -544,9 +533,8 @@ BEGIN
 END;
 GO
 
-/*
-# 8. Procedure para atualizar pedido
-*/
+--8. Procedure para atualizar pedido
+
 CREATE OR ALTER PROCEDURE oltp.sp_atualizar_status_pedido @pedido_id BIGINT,
                                                           @novo_status VARCHAR(30),
                                                           @data_evento DATETIME2 = NULL
@@ -615,9 +603,8 @@ BEGIN
 END;
 GO
 
-/*
-# 9. Procedure para atualizar pagamento
-*/
+--9. Procedure para atualizar pagamento
+
 CREATE OR ALTER PROCEDURE oltp.sp_atualizar_status_pagamento @pedido_id BIGINT,
                                                              @novo_status VARCHAR(20),
                                                              @data_pagamento DATETIME2 = NULL
@@ -662,12 +649,8 @@ BEGIN
 END;
 GO
 
+--10. Procedure principal para povoar o ambiente
 
-/*
-================================================
-# 10. Procedure principal para povoar o ambiente
-================================================
-*/
 CREATE OR ALTER PROCEDURE oltp.sp_povoar_ambiente
 AS
 BEGIN
@@ -724,7 +707,7 @@ BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
 
-        /* Categorias */
+        --Categorias
 
         EXEC oltp.sp_cadastrar_categoria
              @nome = 'Marmitas',
@@ -746,7 +729,7 @@ BEGIN
              @descricao = 'Sobremesas com ingredientes saudáveis',
              @categoria_id = @categoria_sobremesa OUTPUT;
 
-        /* Clientes */
+        --Clientes
 
         EXEC oltp.sp_cadastrar_cliente
              @nome = 'Ana Souza',
@@ -775,7 +758,7 @@ BEGIN
              @data_cadastro = '2025-03-18 14:20:00',
              @cliente_id = @cliente_carla OUTPUT;
 
-        /* Endereços */
+        --Endereços
 
         EXEC oltp.sp_cadastrar_endereco
              @cliente_id = @cliente_ana,
@@ -814,7 +797,7 @@ BEGIN
              @endereco_principal = 1,
              @endereco_id = @endereco_carla OUTPUT;
 
-        /* Restaurantes */
+        --Restaurantes
 
         EXEC oltp.sp_cadastrar_restaurante
              @nome_responsavel = 'Marcos Oliveira',
@@ -850,7 +833,7 @@ BEGIN
              @data_cadastro = '2024-12-15 08:00:00',
              @restaurante_id = @restaurante_natural OUTPUT;
 
-        /* Itens */
+        --Itens
 
         EXEC oltp.sp_cadastrar_item_cardapio
              @restaurante_id = @restaurante_fit,
@@ -915,7 +898,7 @@ BEGIN
              @restricao_alimentar = 'SEM_ACUCAR',
              @item_cardapio_id = @item_brownie OUTPUT;
 
-        /* Pedido 1 */
+        --Pedido 1
 
         EXEC oltp.sp_criar_pedido
              @cliente_id = @cliente_ana,
@@ -947,7 +930,7 @@ BEGIN
              @novo_status = 'ENTREGUE',
              @data_evento = '2025-04-05 12:20:00';
 
-        /* Pedido 2 */
+        --Pedido 2
 
         EXEC oltp.sp_criar_pedido
              @cliente_id = @cliente_bruno,
@@ -985,7 +968,7 @@ BEGIN
              @novo_status = 'ENTREGUE',
              @data_evento = '2025-04-08 19:05:00';
 
-        /* Pedido 3 cancelado */
+        --Pedido 3 cancelado
 
         EXEC oltp.sp_criar_pedido
              @cliente_id = @cliente_carla,
@@ -1011,7 +994,8 @@ BEGIN
              @novo_status = 'CANCELADO',
              @data_evento = '2025-04-10 20:05:00';
 
-        /* PEDIDO 4 - Entregue, PIX Ana comprando no Fit Food  */
+        --PEDIDO 4 - Entregue, PIX Ana comprando no Fit Food
+
         EXEC oltp.sp_criar_pedido
              @cliente_id = @cliente_ana,
              @restaurante_id = @restaurante_fit,
@@ -1050,7 +1034,8 @@ BEGIN
              @data_evento = '2025-04-15 13:05:00';
 
 
-        /* PEDIDO 5 - Entregue, dinheiro -> Bruno comprando no Fit Food*/
+        --PEDIDO 5 - Entregue, dinheiro -> Bruno comprando no Fit Food
+
         EXEC oltp.sp_criar_pedido
              @cliente_id = @cliente_bruno,
              @restaurante_id = @restaurante_fit,
@@ -1082,8 +1067,7 @@ BEGIN
              @novo_status = 'PAGO',
              @data_pagamento = '2025-04-20 20:25:00';
 
-
-        /*PEDIDO 6 - Entregue, cartão de débito -> Carla comprando no Sabor Natural */
+        --PEDIDO 6 - Entregue, cartão de débito -> Carla comprando no Sabor Natural
 
         EXEC oltp.sp_criar_pedido
              @cliente_id = @cliente_carla,
@@ -1128,7 +1112,7 @@ BEGIN
              @data_evento = '2025-05-02 17:10:00';
 
 
-        /*PEDIDO 7 - Cancelado com pagamento cancelado -> Ana comprando no Sabor Natural */
+        --PEDIDO 7 - Cancelado com pagamento cancelado -> Ana comprando no Sabor Natural
 
         EXEC oltp.sp_criar_pedido
              @cliente_id = @cliente_ana,
@@ -1160,8 +1144,7 @@ BEGIN
              @novo_status = 'CANCELADO',
              @data_evento = '2025-05-06 20:08:00';
 
-
-        /*PEDIDO 8 - Em preparo -> Bruno comprando no Sabor Natural*/
+        --PEDIDO 8 - Em preparo -> Bruno comprando no Sabor Natural
 
         EXEC oltp.sp_criar_pedido
              @cliente_id = @cliente_bruno,
@@ -1199,8 +1182,7 @@ BEGIN
              @novo_status = 'EM_PREPARO',
              @data_evento = '2025-05-10 11:50:00';
 
-
-        /*PEDIDO 9 - Saiu para entrega -> Carla comprando no Fit Food*/
+        --PEDIDO 9 - Saiu para entrega -> Carla comprando no Fit Food
 
         EXEC oltp.sp_criar_pedido
              @cliente_id = @cliente_carla,
@@ -1237,8 +1219,7 @@ BEGIN
              @novo_status = 'SAIU_PARA_ENTREGA',
              @data_evento = '2025-05-14 12:40:00';
 
-
-        /*PEDIDO 10 - Pendente e ainda não pago -> Ana comprando no Fit Food*/
+        --PEDIDO 10 - Pendente e ainda não pago -> Ana comprando no Fit Food
 
         EXEC oltp.sp_criar_pedido
              @cliente_id = @cliente_ana,
@@ -1255,8 +1236,7 @@ BEGIN
              @quantidade = 1,
              @item_pedido_id = @item_pedido_id OUTPUT;
 
-
-        /*PEDIDO 11 - Pagamento falhou e pedido cancelado -> Bruno comprando no Fit Food*/
+        --PEDIDO 11 - Pagamento falhou e pedido cancelado -> Bruno comprando no Fit Food
 
         EXEC oltp.sp_criar_pedido
              @cliente_id = @cliente_bruno,
@@ -1282,8 +1262,7 @@ BEGIN
              @novo_status = 'CANCELADO',
              @data_evento = '2025-06-04 20:20:00';
 
-
-        /*PEDIDO 12 - Entregue, cartão de crédito -> Carla comprando no Sabor Natural*/
+        --PEDIDO 12 - Entregue, cartão de crédito -> Carla comprando no Sabor Natural
 
         EXEC oltp.sp_criar_pedido
              @cliente_id = @cliente_carla,
@@ -1335,15 +1314,14 @@ BEGIN
 END;
 GO
 
-/*
-Executar o povoamento
-*/
+--Executar o povoamento
+
 EXEC oltp.sp_povoar_ambiente;
 GO
 
 
 
-/*Limpar dados */
+--Limpar dados
 CREATE OR ALTER PROCEDURE oltp.sp_limpar_ambiente
 AS
 BEGIN
@@ -1353,12 +1331,12 @@ BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
 
-        /* Filhas */
+        --Filhas
 
         DELETE FROM oltp.itens_pedido;
         DELETE FROM oltp.pedidos;
 
-        /* Dependências de restaurantes e clientes */
+        --Dependências de restaurantes e clientes
 
         DELETE FROM oltp.itens_cardapio;
         DELETE FROM oltp.categorias_cardapio;
@@ -1367,11 +1345,11 @@ BEGIN
         DELETE FROM oltp.restaurantes;
         DELETE FROM oltp.clientes;
 
-        /* Tabela raiz */
+        --Tabela raiz
 
         DELETE FROM oltp.usuarios;
 
-        /* Reinicia os IDs */
+        --Reinicia os IDs
 
         DBCC CHECKIDENT ('oltp.itens_pedido', RESEED, 0);
         DBCC CHECKIDENT ('oltp.pedidos', RESEED, 0);
@@ -1395,7 +1373,7 @@ BEGIN
 END;
 GO
 
-/* Executando limpeza */
+--Executando limpeza
 EXEC oltp.sp_limpar_ambiente;
 GO
 
