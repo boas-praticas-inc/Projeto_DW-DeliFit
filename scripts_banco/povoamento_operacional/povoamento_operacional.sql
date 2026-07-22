@@ -1319,6 +1319,117 @@ GO
 EXEC oltp.sp_povoar_ambiente;
 GO
 
+-- Carga incremental adicional: 30 clientes, 5 restaurantes, 30 enderecos,
+-- 2 categorias, 25 itens de cardapio, 120 pedidos e 300 itens de pedido.
+-- Esta carga e executada junto com o povoamento operacional principal.
+DECLARE @inc_i INT = 1, @inc_j INT, @inc_uid BIGINT, @inc_cliente BIGINT, @inc_endereco BIGINT,
+        @inc_restaurante BIGINT, @inc_categoria INT, @inc_item BIGINT, @inc_pedido BIGINT,
+        @inc_preco DECIMAL(10,2), @inc_qtd INT, @inc_linhas INT, @inc_status INT,
+        @inc_data DATETIME2, @inc_pago DATETIME2;
+DECLARE @inc_clientes TABLE (cliente_id BIGINT, endereco_id BIGINT);
+DECLARE @inc_restaurantes TABLE (restaurante_id BIGINT);
+DECLARE @inc_itens TABLE (item_id BIGINT, restaurante_id BIGINT);
+DECLARE @inc_categorias TABLE (categoria_id INT);
+
+INSERT INTO oltp.categorias_cardapio (nome, descricao, ativo)
+VALUES ('Saladas e Bowls', 'Saladas, bowls e refeicoes leves', 1),
+       ('Snacks Saudaveis', 'Opcoes leves para pequenos lanches', 1);
+INSERT INTO @inc_categorias
+SELECT categoria_id FROM oltp.categorias_cardapio
+WHERE nome IN ('Saladas e Bowls', 'Snacks Saudaveis');
+
+WHILE @inc_i <= 30
+BEGIN
+    INSERT INTO oltp.usuarios (nome,email,senha_hash,telefone,tipo_usuario,ativo,data_cadastro)
+    VALUES ('Cliente Incremental '+RIGHT('00'+CAST(@inc_i AS VARCHAR(2)),2),
+            'incremental.cliente.'+RIGHT('00'+CAST(@inc_i AS VARCHAR(2)),2)+'@delifit.com',
+            'HASH_INCREMENTAL_CLIENTE','(79) 988'+RIGHT('00'+CAST(@inc_i AS VARCHAR(2)),2)+'-0000',
+            'CLIENTE',1,DATEADD(DAY,@inc_i,'2025-07-01'));
+    SET @inc_uid = SCOPE_IDENTITY();
+    INSERT INTO oltp.clientes (usuario_id,data_nascimento)
+    VALUES (@inc_uid,DATEADD(DAY,-(8000+@inc_i*37),'2025-01-01'));
+    SET @inc_cliente = SCOPE_IDENTITY();
+    INSERT INTO oltp.enderecos (cliente_id,nome_endereco,cep,logradouro,numero,bairro,cidade,estado,endereco_principal,ativo)
+    VALUES (@inc_cliente,'Endereco principal','490'+RIGHT('00'+CAST(@inc_i AS VARCHAR(2)),2)+'-'+RIGHT('000'+CAST(@inc_i AS VARCHAR(3)),3),
+            'Rua dos Clientes',CAST(100+@inc_i AS VARCHAR(20)),CASE WHEN @inc_i%2=0 THEN 'Jardins' ELSE 'Centro' END,
+            'Aracaju','SE',1,1);
+    SET @inc_endereco = SCOPE_IDENTITY();
+    INSERT INTO @inc_clientes VALUES (@inc_cliente,@inc_endereco);
+    SET @inc_i += 1;
+END;
+
+SET @inc_i = 1;
+WHILE @inc_i <= 5
+BEGIN
+    INSERT INTO oltp.usuarios (nome,email,senha_hash,telefone,tipo_usuario,ativo,data_cadastro)
+    VALUES ('Responsavel Incremental '+CAST(@inc_i AS VARCHAR(2)),
+            'incremental.restaurante.'+CAST(@inc_i AS VARCHAR(2))+'@delifit.com',
+            'HASH_INCREMENTAL_RESTAURANTE','(79) 3222-'+RIGHT('0000'+CAST(100+@inc_i AS VARCHAR(4)),4),
+            'RESTAURANTE',1,DATEADD(DAY,@inc_i,'2025-07-15'));
+    SET @inc_uid = SCOPE_IDENTITY();
+    INSERT INTO oltp.restaurantes (usuario_id,nome_fantasia,cnpj,descricao,telefone,cep,logradouro,numero,bairro,cidade,estado,ativo,data_cadastro)
+    VALUES (@inc_uid,'DeliFit Parceiro '+CAST(@inc_i AS VARCHAR(2)),
+            '33.333.33'+CAST(@inc_i AS VARCHAR(1))+'/0001-00','Restaurante parceiro gerado para carga analitica',
+            '(79) 3222-'+RIGHT('0000'+CAST(100+@inc_i AS VARCHAR(4)),4),'49030-'+RIGHT('000'+CAST(100+@inc_i AS VARCHAR(3)),3),
+            'Avenida da Alimentacao',CAST(500+@inc_i AS VARCHAR(20)),'Sao Jose','Aracaju','SE',1,DATEADD(DAY,@inc_i,'2025-07-15'));
+    SET @inc_restaurante = SCOPE_IDENTITY();
+    INSERT INTO @inc_restaurantes VALUES (@inc_restaurante);
+    SET @inc_j = 1;
+    WHILE @inc_j <= 5
+    BEGIN
+        SELECT TOP (1) @inc_categoria = categoria_id FROM @inc_categorias ORDER BY NEWID();
+        INSERT INTO oltp.itens_cardapio (restaurante_id,categoria_id,nome,descricao,preco,calorias,proteinas,carboidratos,gorduras,restricao_alimentar,disponivel,data_cadastro)
+        VALUES (@inc_restaurante,@inc_categoria,'Opcao '+CAST(@inc_i AS VARCHAR(2))+'-'+CAST(@inc_j AS VARCHAR(2)),
+                'Item saudavel do cardapio incremental',12+(@inc_i*2)+(@inc_j*1.5),180+@inc_i*25+@inc_j*10,
+                8+@inc_i+@inc_j,20+@inc_j*3,4+@inc_i,CASE WHEN @inc_j%3=0 THEN 'VEGANO' ELSE NULL END,1,
+                DATEADD(DAY,@inc_i+@inc_j,'2025-07-20'));
+        SET @inc_item = SCOPE_IDENTITY();
+        INSERT INTO @inc_itens VALUES (@inc_item,@inc_restaurante);
+        SET @inc_j += 1;
+    END;
+    SET @inc_i += 1;
+END;
+
+SET @inc_i = 1;
+WHILE @inc_i <= 120
+BEGIN
+    SELECT @inc_cliente=cliente_id,@inc_endereco=endereco_id
+    FROM (SELECT cliente_id,endereco_id,ROW_NUMBER() OVER (ORDER BY cliente_id) AS rn FROM @inc_clientes) c
+    WHERE rn=((@inc_i-1)%30)+1;
+    SELECT @inc_restaurante=restaurante_id
+    FROM (SELECT restaurante_id,ROW_NUMBER() OVER (ORDER BY restaurante_id) AS rn FROM oltp.restaurantes) r
+    WHERE rn=((@inc_i-1)%7)+1;
+    SET @inc_data=DATEADD(HOUR,@inc_i*5,'2025-07-25 10:00:00');
+    INSERT INTO oltp.pedidos (cliente_id,restaurante_id,endereco_entrega_id,status_pedido,forma_pagamento,status_pagamento,valor_subtotal,valor_frete,valor_total,criado_em)
+    VALUES (@inc_cliente,@inc_restaurante,@inc_endereco,'PENDENTE',CASE @inc_i%4 WHEN 0 THEN 'PIX' WHEN 1 THEN 'CARTAO_CREDITO' WHEN 2 THEN 'CARTAO_DEBITO' ELSE 'DINHEIRO' END,'PENDENTE',0,4+(@inc_i%5),4+(@inc_i%5),@inc_data);
+    SET @inc_pedido=SCOPE_IDENTITY();
+    SET @inc_linhas=CASE WHEN @inc_i<=60 THEN 2 ELSE 3 END;
+    SET @inc_j=1;
+    WHILE @inc_j<=@inc_linhas
+    BEGIN
+        SELECT TOP (1) @inc_item=t.item_id,@inc_preco=i.preco
+        FROM @inc_itens t JOIN oltp.itens_cardapio i ON i.item_cardapio_id=t.item_id
+        WHERE t.restaurante_id=@inc_restaurante ORDER BY NEWID();
+        SET @inc_qtd=1+((@inc_i+@inc_j)%3);
+        INSERT INTO oltp.itens_pedido (pedido_id,item_cardapio_id,nome_item_snapshot,descricao_snapshot,preco_unitario_snapshot,quantidade,valor_total_item)
+        SELECT @inc_pedido,item_cardapio_id,nome,descricao,preco,@inc_qtd,preco*@inc_qtd
+        FROM oltp.itens_cardapio WHERE item_cardapio_id=@inc_item;
+        UPDATE oltp.pedidos SET valor_subtotal=valor_subtotal+(@inc_preco*@inc_qtd),valor_total=valor_total+(@inc_preco*@inc_qtd)
+        WHERE pedido_id=@inc_pedido;
+        SET @inc_j+=1;
+    END;
+    SET @inc_status=@inc_i%8; SET @inc_pago=DATEADD(MINUTE,5,@inc_data);
+    IF @inc_status IN (0,1,2,3)
+        UPDATE oltp.pedidos SET status_pedido=CASE @inc_status WHEN 0 THEN 'ENTREGUE' WHEN 1 THEN 'EM_PREPARO' WHEN 2 THEN 'SAIU_PARA_ENTREGA' ELSE 'CONFIRMADO' END,
+            status_pagamento='PAGO',confirmado_em=DATEADD(MINUTE,10,@inc_data),
+            entregue_em=CASE WHEN @inc_status=0 THEN DATEADD(MINUTE,60,@inc_data) ELSE NULL END,pago_em=@inc_pago
+        WHERE pedido_id=@inc_pedido;
+    IF @inc_status=4
+        UPDATE oltp.pedidos SET status_pedido='CANCELADO',status_pagamento='FALHOU',cancelado_em=DATEADD(MINUTE,12,@inc_data)
+        WHERE pedido_id=@inc_pedido;
+    SET @inc_i+=1;
+END;
+
 
 
 --Limpar dados
