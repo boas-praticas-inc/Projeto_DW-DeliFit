@@ -1504,3 +1504,4 @@ SELECT *
 FROM oltp.pedidos;
 SELECT *
 FROM oltp.itens_pedido;
+ 
