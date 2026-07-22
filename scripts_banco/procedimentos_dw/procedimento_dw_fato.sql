@@ -36,7 +36,7 @@ BEGIN
             ip.valor_total_item,
             CAST(
                 CASE
-                    WHEN p.valor_subtotal > 0
+                    WHEN p.valor_subtotal > 0 --criar regra para divisao do frete
                         THEN p.valor_frete * ip.valor_total_item / p.valor_subtotal
                     ELSE 0
                 END AS DECIMAL(10,2)
@@ -50,50 +50,66 @@ BEGIN
         FROM stg.stg_pedidos AS p
         INNER JOIN stg.stg_itens_pedido AS ip
             ON ip.pedido_id = p.pedido_id
-        INNER JOIN dw.dim_tempo AS t
+        INNER JOIN dw.dim_tempo AS t --criado em
             ON t.data = CAST(p.criado_em AS DATE)
-        LEFT JOIN dw.dim_tempo AS te
+        LEFT JOIN dw.dim_tempo AS te --nem todo pedido foi entregue
             ON te.data = CAST(p.entregue_em AS DATE)
         LEFT JOIN dw.dim_tempo AS tc
             ON tc.data = CAST(p.cancelado_em AS DATE)
         LEFT JOIN dw.dim_tempo AS tp
             ON tp.data = CAST(p.pago_em AS DATE)
-        CROSS APPLY
-        (
-            SELECT TOP (1) d.id_cliente
-            FROM dw.dim_cliente AS d
-            WHERE d.cliente_id = p.cliente_id
-              AND d.data_inicio <= p.criado_em
-              AND (d.data_fim IS NULL OR p.criado_em < d.data_fim)
-            ORDER BY d.data_inicio DESC
-        ) AS c
-        CROSS APPLY
-        (
-            SELECT TOP (1) d.id_endereco
-            FROM dw.dim_endereco AS d
-            WHERE d.endereco_id = p.endereco_entrega_id
-              AND d.data_inicio <= p.criado_em
-              AND (d.data_fim IS NULL OR p.criado_em < d.data_fim)
-            ORDER BY d.data_inicio DESC
-        ) AS e
-        CROSS APPLY
-        (
-            SELECT TOP (1) d.id_restaurante
-            FROM dw.dim_restaurante AS d
-            WHERE d.restaurante_id = p.restaurante_id
-              AND d.data_inicio <= p.criado_em
-              AND (d.data_fim IS NULL OR p.criado_em < d.data_fim)
-            ORDER BY d.data_inicio DESC
-        ) AS r
-        CROSS APPLY
-        (
-            SELECT TOP (1) d.id_item
-            FROM dw.dim_item AS d
-            WHERE d.item_cardapio_id = ip.item_cardapio_id
-              AND d.data_inicio <= p.criado_em
-              AND (d.data_fim IS NULL OR p.criado_em < d.data_fim)
-            ORDER BY d.data_inicio DESC
-        ) AS i
+        INNER JOIN dw.dim_cliente AS c
+            ON c.cliente_id = p.cliente_id
+           AND c.data_inicio <= p.criado_em
+           AND (c.data_fim IS NULL OR p.criado_em < c.data_fim)
+           AND NOT EXISTS
+           (
+               SELECT 1
+               FROM dw.dim_cliente AS d
+               WHERE d.cliente_id = c.cliente_id
+                 AND d.data_inicio <= p.criado_em
+                 AND (d.data_fim IS NULL OR p.criado_em < d.data_fim)
+                 AND d.data_inicio > c.data_inicio --existe algum cliente com a data_inicio maior?
+           )
+        INNER JOIN dw.dim_endereco AS e
+            ON e.endereco_id = p.endereco_entrega_id
+           AND e.data_inicio <= p.criado_em
+           AND (e.data_fim IS NULL OR p.criado_em < e.data_fim)
+           AND NOT EXISTS
+           (
+               SELECT 1
+               FROM dw.dim_endereco AS d
+               WHERE d.endereco_id = e.endereco_id
+                 AND d.data_inicio <= p.criado_em
+                 AND (d.data_fim IS NULL OR p.criado_em < d.data_fim)
+                 AND d.data_inicio > e.data_inicio
+           )
+        INNER JOIN dw.dim_restaurante AS r
+            ON r.restaurante_id = p.restaurante_id
+           AND r.data_inicio <= p.criado_em
+           AND (r.data_fim IS NULL OR p.criado_em < r.data_fim)
+           AND NOT EXISTS
+           (
+               SELECT 1
+               FROM dw.dim_restaurante AS d
+               WHERE d.restaurante_id = r.restaurante_id
+                 AND d.data_inicio <= p.criado_em
+                 AND (d.data_fim IS NULL OR p.criado_em < d.data_fim)
+                 AND d.data_inicio > r.data_inicio
+           )
+        INNER JOIN dw.dim_item AS i
+            ON i.item_cardapio_id = ip.item_cardapio_id
+           AND i.data_inicio <= p.criado_em
+           AND (i.data_fim IS NULL OR p.criado_em < i.data_fim)
+           AND NOT EXISTS
+           (
+               SELECT 1
+               FROM dw.dim_item AS d
+               WHERE d.item_cardapio_id = i.item_cardapio_id
+                 AND d.data_inicio <= p.criado_em
+                 AND (d.data_fim IS NULL OR p.criado_em < d.data_fim)
+                 AND d.data_inicio > i.data_inicio
+           )
         INNER JOIN dw.dim_pagamento AS pg
             ON pg.forma_pagamento = p.forma_pagamento
            AND pg.status_pagamento = p.status_pagamento
